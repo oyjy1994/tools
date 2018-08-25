@@ -8,8 +8,8 @@ namespace EasyResProtect
 {
     class ResProtect
     {
-        const int PASSWORD_LENGTH = 128;
-        static byte[] IV = new byte[] { 0x12, 0x34, 0x56, 0x78, 0x90, 0xAB, 0xCD, 0xEF };
+        const int PASSWORD_LENGTH = 32;
+        static byte[] IV = new byte[] { 0xa2, 0xb4, 0xc6, 0xd8, 0xe0, 0xfB, 0xCD, 0xEF, 0x12, 0x34, 0x56, 0x78, 0x90, 0xAB, 0xCD, 0xEF };
         static AesCryptoServiceProvider aesProvider;
 
         static void Init(string key)
@@ -18,7 +18,7 @@ namespace EasyResProtect
             {
                 aesProvider = new AesCryptoServiceProvider
                 {
-                    KeySize = PASSWORD_LENGTH,
+                    //KeySize = PASSWORD_LENGTH,
                     IV = IV,
                     Mode = CipherMode.ECB,
                     Padding = PaddingMode.PKCS7,
