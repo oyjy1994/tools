@@ -1,0 +1,6 @@
+E:\tools\EasyResProtect\EasyResProtect\bin\Debug\EasyResProtect.dll
+E:\tools\EasyResProtect\EasyResProtect\bin\Debug\EasyResProtect.pdb
+E:\tools\EasyResProtect\EasyResProtect\obj\Debug\EasyResProtect.csprojAssemblyReference.cache
+E:\tools\EasyResProtect\EasyResProtect\obj\Debug\EasyResProtect.csproj.CoreCompileInputs.cache
+E:\tools\EasyResProtect\EasyResProtect\obj\Debug\EasyResProtect.dll
+E:\tools\EasyResProtect\EasyResProtect\obj\Debug\EasyResProtect.pdb

@@ -1,0 +1,5 @@
+E:\tools\EasyResProtect\EasyResProtect\bin\Release\EasyResProtect.dll
+E:\tools\EasyResProtect\EasyResProtect\bin\Release\EasyResProtect.pdb
+E:\tools\EasyResProtect\EasyResProtect\obj\Release\EasyResProtect.csproj.CoreCompileInputs.cache
+E:\tools\EasyResProtect\EasyResProtect\obj\Release\EasyResProtect.dll
+E:\tools\EasyResProtect\EasyResProtect\obj\Release\EasyResProtect.pdb

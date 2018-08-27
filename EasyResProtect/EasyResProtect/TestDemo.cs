@@ -15,7 +15,7 @@ namespace EasyResProtect
             string[] files = Directory.GetFiles(dir, "*.*", SearchOption.AllDirectories);
             foreach (var file in files)
             {
-                ResProtect.DoEncrypt(file, "123123123123fasdjfaldkfajlsdfkaldadfad", Filter); //key128位,多去少补
+                ResProtect.DoEncrypt(file, "123123123123fasdjfaldkfajlsdfkaldadfad", Filter); //key32位,多去少补
             }
         }
 
