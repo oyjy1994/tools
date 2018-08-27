@@ -1,2 +1,2 @@
 # EasyResProtect
-测试一个简单的资源加密
+testing. At the beginning, i designed it for encrypting unity resource.
