@@ -1,91 +1,113 @@
+using XLua;
 using System;
 using System.Text;
+//c#加解密库都存在于此
+using System.Security.Cryptography;
 
 /// <summary>
-/// rc4流式加密解密
-/// 加密是连续的,加密完成之后再解密
-/// 速度快,可以用在协议或日志
+/// PKCS#1
 /// </summary>
-public class Rc4Encrypt
+[LuaCallCSharp]
+public class RsaEncrypt
 {
-    private const int BYTELEN = 256;
-    private static string recordKey = string.Empty;
-    private static int keyIndex; //计算获取密钥字节的一个临时索引,在加解密之前重置
-    private static int dataIndex; //计算获取密钥字节的索引,在加解密之前重置
-    public static byte[] keyStream = new byte[BYTELEN]; //密钥流
-    public static byte[] keyStreamTemp = new byte[BYTELEN]; //密钥流temp
 
-    public static void Initialized(string key)
+    #region same public key
+    static public CspParameters GetCspparametersKey(string key)
     {
-        if (key == recordKey)
-            return;
+        return new CspParameters() { KeyContainerName = key };
+    }
 
-        Reset();
-        recordKey = key;
-        //初始
-        for (int i = 0; i < BYTELEN; i++)
+    /// <summary>
+    /// 基于Base64编码的RSA加密
+    /// </summary>
+    static public string Encrypt(string key, string value)
+    {
+        if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(value))
+            return string.Empty;
+
+        using (RSACryptoServiceProvider rsa = new RSACryptoServiceProvider(GetCspparametersKey(key)))
         {
-            keyStream[i] = (byte)i;
+            var rsaBytes = rsa.Encrypt(Encoding.UTF8.GetBytes(value), false);
+            return Convert.ToBase64String(rsaBytes);
         }
-        GenKeyStream(key);
     }
 
-    //生成密钥流
-    private static void GenKeyStream(string key)
+    /// <summary>
+    /// 基于Base64编码的RSA解密
+    /// </summary>
+    static public string Decrypt(string key, string value)
     {
-        //byte[] s = Encoding.UTF8.GetBytes(key);
-        byte b;
-        int j = 0;
-        int k = 0;
-        int kl = key.Length;
-        for (int i = 0; i < BYTELEN; i++)
+        if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(value))
+            return string.Empty;
+
+        using (RSACryptoServiceProvider rsa = new RSACryptoServiceProvider(GetCspparametersKey(key)))
         {
-            b = keyStream[i];
-            j = (j + b + key[k]) % BYTELEN;
-            keyStream[i] = keyStream[j];
-            keyStream[j] = b;
-            if (++k >= kl)
-                k = 0;
+            var rsaBytes = rsa.Decrypt(Convert.FromBase64String(value), false);
+            return Encoding.UTF8.GetString(rsaBytes);
         }
-        keyStream.CopyTo(keyStreamTemp, 0);
     }
 
-    private static void Reset()
+    /// <summary>
+    /// 基于Base64编码的RSA加密
+    /// </summary>
+    static public string EncryptDer(string base64Key, string value)
     {
-        keyIndex = 0;
-        dataIndex = 0;
-        keyStreamTemp.CopyTo(keyStream, 0);
-    }
+        if (string.IsNullOrEmpty(base64Key) || string.IsNullOrEmpty(value))
+            return string.Empty;
 
-    //获取密钥位
-    public static byte GetKeyStreamByte(int index)
-    {
-        int rIdx = (index + 1) % BYTELEN;
-        byte b = keyStream[rIdx];
-        keyIndex = (keyIndex + b) % BYTELEN;
-        byte b2 = keyStream[keyIndex];
-        keyStream[rIdx] = b2;
-        keyStream[keyIndex] = b;
-        int i3 = (b + b2) % BYTELEN;
-        return keyStream[i3];
-    }
-
-    public static byte[] Encrypt(byte[] array)
-    {
-        int len = array.Length;
-        byte[] r = new byte[len];
-        for (int i = 0; i < len; i++)
+        using (RSACryptoServiceProvider rsa = new RSACryptoServiceProvider())
         {
-            byte keyByte = GetKeyStreamByte(dataIndex++);
-            r[i] = (byte)(array[i] ^ keyByte);
+            rsa.ImportParameters(ConvertFromPemPublicKey(base64Key));
+            var rsaBytes = rsa.Encrypt(Encoding.UTF8.GetBytes(value), false);
+            return Convert.ToBase64String(rsaBytes);
+        }
+    }
+
+    /// <summary>
+    /// 构造Parameters
+    /// </summary>
+    static public RSAParameters ConvertFromPemPublicKey(string pemFileConent)
+    {
+        if (string.IsNullOrEmpty(pemFileConent))
+        {
+            throw new ArgumentNullException("pemFileConent", "This arg cann't be empty.");
+        }
+        pemFileConent = pemFileConent.Replace("-----BEGIN PUBLIC KEY-----", "").
+                                      Replace("-----END PUBLIC KEY-----", "").
+                                      Replace("\n", "").
+                                      Replace("\r", "");
+        byte[] keyData = Convert.FromBase64String(pemFileConent);
+        bool keySize512 = (keyData.Length == 94);
+        bool keySize1024 = (keyData.Length == 162);
+        bool keySize2048 = (keyData.Length == 294);
+        //DHLog.Log("rsa keysize = {0}", keyData.Length);
+        if (!(keySize1024 || keySize2048 || keySize512))
+        {
+            throw new ArgumentException("pem file content is incorrect, Only support the key size is 1024 or 2048");
         }
 
-        return r;
+        var pemModulus = (keySize1024 ? new byte[128] : new byte[256]);
+
+        //1024或者2048密钥
+        if (keySize1024 || keySize2048)
+        {
+            Array.Copy(keyData, (keySize1024 ? 29 : 33), pemModulus, 0, (keySize1024 ? 128 : 256));
+        }
+
+        //512位长度密钥
+        if (keySize512)
+        {
+            pemModulus = new byte[64];
+            Array.Copy(keyData, 25, pemModulus, 0, pemModulus.Length);
+        }
+
+        var pemPublicExponent = new byte[3];
+        Array.Copy(keyData, keyData.Length - 3, pemPublicExponent, 0, 3);
+
+        var para = new RSAParameters { Modulus = pemModulus, Exponent = pemPublicExponent };
+        return para;
     }
 
-    //异或,所以解密加密一样
-    public static byte[] Decrypt(byte[] array)
-    {
-        return Encrypt(array);
-    }
+    #endregion
+
 }
